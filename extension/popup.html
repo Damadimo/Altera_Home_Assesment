@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini DevTools Recorder</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 16px;
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      background: #f8f9fa;
+    }
+    
+    .header {
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+    
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    button {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+    
+    button:hover:not(:disabled) {
+      background: #f3f4f6;
+      border-color: #9ca3af;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    button.primary {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+    
+    button.primary:hover:not(:disabled) {
+      background: #2563eb;
+    }
+    
+    button.danger {
+      background: #ef4444;
+      color: white;
+      border-color: #ef4444;
+    }
+    
+    button.danger:hover:not(:disabled) {
+      background: #dc2626;
+    }
+    
+    #status {
+      padding: 8px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Mini DevTools Recorder</h1>
+  </div>
+  
+  <div class="controls">
+    <button id="startBtn" class="primary" accesskey="s">
+      <u>S</u>tart Recording
+    </button>
+    <button id="stopBtn" class="danger" disabled accesskey="t">
+      S<u>t</u>op Recording
+    </button>
+    <button id="downloadBtn" disabled accesskey="d">
+      <u>D</u>ownload Trace
+    </button>
+  </div>
+  
+  <div id="status" role="status" aria-live="polite">
+    Ready
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

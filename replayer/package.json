@@ -1,0 +1,26 @@
+{
+  "name": "mini-devtools-replayer",
+  "version": "0.0.1",
+  "description": "Phase 0 scaffold - Playwright-based trace replayer for Mini DevTools Recorder",
+  "private": true,
+  "main": "replay.js",
+  "scripts": {
+    "setup": "playwright install chromium",
+    "replay": "node replay.js"
+  },
+  "keywords": [
+    "playwright",
+    "automation",
+    "testing",
+    "recorder",
+    "devtools"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "^1.45.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

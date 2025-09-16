@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Mini DevTools Recorder",
+  "version": "0.0.1",
+  "description": "Phase 0 scaffold for a Chrome DevTools-style recorder + replayer.",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["utils/selector.js", "content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
