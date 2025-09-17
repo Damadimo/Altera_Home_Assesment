@@ -1,134 +1,233 @@
-// PHASE 0 STUB - Mini DevTools Recorder Popup
-// This file handles the popup UI interactions and will communicate with content scripts in Phase 1
-
-(function() {
+document.addEventListener("DOMContentLoaded", () => {
   'use strict';
 
-  // Guard against missing Chrome extension APIs
-  if (typeof chrome === 'undefined' || !chrome.tabs) {
-    console.error('Chrome extension APIs not available');
-    return;
+  const MESSAGES = {
+    REC_QUERY_STATE: "REC_QUERY_STATE",
+    REC_START_REQUEST: "REC_START_REQUEST", 
+    REC_STOP_REQUEST: "REC_STOP_REQUEST",
+    REC_DUMP: "REC_DUMP",
+    GET_LAST_TRACE: "GET_LAST_TRACE",
+    START_REPLAY: "START_REPLAY",
+    REPLAY_STATUS: "REPLAY_STATUS"
+  };
+
+  const STATUS_MESSAGES = {
+    READY: "Ready",
+    RECORDING: "Recording…",
+    IDLE: "Idle",
+    STOPPED: "Stopped",
+    CONNECTION_ERROR: "Connection error",
+    NO_ACTIVE_TAB: "No active tab",
+    FAILED_TO_START: "Failed to start",
+    FAILED_TO_STOP: "Failed to stop",
+    NO_TRACE_DATA: "No trace data - reload page and try again",
+    TRACE_DOWNLOADED: "Trace downloaded",
+    REPLAY_STARTED: "Replay started in new tab",
+    REPLAY_COMPLETED: "Replay completed"
+  };
+
+  const elements = {
+    startBtn: document.getElementById("startBtn"),
+    stopBtn: document.getElementById("stopBtn"),
+    downloadBtn: document.getElementById("downloadBtn"),
+    replayBtn: document.getElementById("replayBtn"),
+    respectTimingCheckbox: document.getElementById("respectTimingCheckbox"),
+    statusEl: document.getElementById("status")
+  };
+
+  class UIController {
+    static setStatus(message, statusClass = '') {
+      if (elements.statusEl) {
+        elements.statusEl.textContent = message;
+        elements.statusEl.className = statusClass;
+      }
+    }
+
+    static setRecordingState(isRecording) {
+      elements.startBtn.disabled = !!isRecording;
+      elements.stopBtn.disabled = !isRecording;
+      elements.downloadBtn.disabled = !!isRecording;
+    }
+
+    static setReplayState(hasTrace) {
+      elements.replayBtn.disabled = !hasTrace;
+    }
+
+    static updateForRecordingState(isRecording) {
+      this.setRecordingState(isRecording);
+      this.setStatus(
+        isRecording ? STATUS_MESSAGES.RECORDING : STATUS_MESSAGES.IDLE,
+        isRecording ? 'recording' : 'ready'
+      );
+    }
   }
 
-  // DOM elements
-  let startBtn, stopBtn, downloadBtn, statusDiv;
+  class BackgroundCommunicator {
+    static async sendMessage(message) {
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage(message, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Runtime error:', chrome.runtime.lastError);
+            resolve({ error: chrome.runtime.lastError.message });
+            return;
+          }
+          resolve(response || {});
+        });
+      });
+    }
 
-  // Initialize popup when DOM is ready
-  document.addEventListener('DOMContentLoaded', initializePopup);
-
-  function initializePopup() {
-    try {
-      // Get DOM references
-      startBtn = document.getElementById('startBtn');
-      stopBtn = document.getElementById('stopBtn');
-      downloadBtn = document.getElementById('downloadBtn');
-      statusDiv = document.getElementById('status');
-
-      if (!startBtn || !stopBtn || !downloadBtn || !statusDiv) {
-        throw new Error('Required DOM elements not found');
+    static async queryRecordingState() {
+      const response = await this.sendMessage({ type: MESSAGES.REC_QUERY_STATE });
+      
+      if (response.error) {
+        UIController.setStatus(STATUS_MESSAGES.CONNECTION_ERROR, 'error');
+        return null;
       }
 
-      // Wire up event listeners
-      startBtn.addEventListener('click', handleStartRecording);
-      stopBtn.addEventListener('click', handleStopRecording);
-      downloadBtn.addEventListener('click', handleDownloadTrace);
+      return response.state;
+    }
 
-      // Set initial state
-      updateUIState('ready');
+    static async startRecording() {
+      const response = await this.sendMessage({ type: MESSAGES.REC_START_REQUEST });
       
+      if (response.error) {
+        UIController.setStatus(STATUS_MESSAGES.FAILED_TO_START);
+        return false;
+      }
+
+      const success = response.ok;
+      UIController.updateForRecordingState(success);
+      return success;
+    }
+
+    static async stopRecording() {
+      const response = await this.sendMessage({ type: MESSAGES.REC_STOP_REQUEST });
+      
+      if (response.error) {
+        UIController.setStatus(STATUS_MESSAGES.FAILED_TO_STOP);
+        return false;
+      }
+
+      UIController.updateForRecordingState(false);
+      UIController.setStatus(STATUS_MESSAGES.STOPPED);
+      return true;
+    }
+
+    static async downloadTrace() {
+      const tabs = await new Promise(resolve => {
+        chrome.tabs.query({ active: true, currentWindow: true }, resolve);
+      });
+
+      if (!tabs[0]) {
+        UIController.setStatus(STATUS_MESSAGES.NO_ACTIVE_TAB);
+        return false;
+      }
+
+      return new Promise((resolve) => {
+        chrome.tabs.sendMessage(tabs[0].id, { type: MESSAGES.REC_DUMP }, (response) => {
+          if (chrome.runtime.lastError || !response?.ok) {
+            UIController.setStatus(STATUS_MESSAGES.NO_TRACE_DATA);
+            resolve(false);
+            return;
+          }
+
+        UIController.setStatus(STATUS_MESSAGES.TRACE_DOWNLOADED, 'ready');
+        resolve(true);
+        });
+      });
+    }
+
+    static async startReplay() {
+      const respectTiming = elements.respectTimingCheckbox.checked;
+      const response = await this.sendMessage({ 
+        type: MESSAGES.START_REPLAY, 
+        respectTiming 
+      });
+
+      if (response.error || !response.success) {
+        UIController.setStatus(response.error || "Failed to start replay");
+        return false;
+      }
+
+      UIController.setStatus(STATUS_MESSAGES.REPLAY_STARTED);
+      return true;
+    }
+
+    static async checkForTrace() {
+      const response = await this.sendMessage({ type: MESSAGES.GET_LAST_TRACE });
+      return !!response.trace;
+    }
+  }
+
+  /**
+   * Event handlers
+   */
+  class EventHandlers {
+    static async handleStart() {
+      await BackgroundCommunicator.startRecording();
+    }
+
+    static async handleStop() {
+      await BackgroundCommunicator.stopRecording();
+    }
+
+    static async handleDownload() {
+      const success = await BackgroundCommunicator.downloadTrace();
+      if (success) {
+        const hasTrace = await BackgroundCommunicator.checkForTrace();
+        UIController.setReplayState(hasTrace);
+      }
+    }
+
+    static async handleReplay() {
+      await BackgroundCommunicator.startReplay();
+    }
+
+    static handleReplayStatus(message) {
+      switch (message.status) {
+        case 'started':
+          UIController.setStatus("Replay started");
+          break;
+        case 'step':
+          UIController.setStatus(`Step ${message.index + 1}: ${message.stepType}`);
+          break;
+        case 'done':
+          UIController.setStatus(STATUS_MESSAGES.REPLAY_COMPLETED);
+          break;
+        case 'error':
+          UIController.setStatus(`Step ${message.index + 1} failed: ${message.message}`);
+          break;
+      }
+    }
+  }
+
+  async function initialize() {
+    try {
+      const state = await BackgroundCommunicator.queryRecordingState();
+      if (state) {
+        UIController.updateForRecordingState(state.recording);
+      }
+
+      const hasTrace = await BackgroundCommunicator.checkForTrace();
+      UIController.setReplayState(hasTrace);
+
+      elements.startBtn.addEventListener("click", EventHandlers.handleStart);
+      elements.stopBtn.addEventListener("click", EventHandlers.handleStop);
+      elements.downloadBtn.addEventListener("click", EventHandlers.handleDownload);
+      elements.replayBtn.addEventListener("click", EventHandlers.handleReplay);
+
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message?.type === MESSAGES.REPLAY_STATUS) {
+          EventHandlers.handleReplayStatus(message);
+        }
+      });
+
       console.log('Popup initialized successfully');
     } catch (error) {
       console.error('Failed to initialize popup:', error);
-      updateStatus('Initialization error');
+      UIController.setStatus(STATUS_MESSAGES.CONNECTION_ERROR);
     }
   }
 
-  function handleStartRecording() {
-    try {
-      console.log('REC_START - (Phase 0 stub) Start recording requested');
-      
-      // TODO Phase 1: Send message to active tab via chrome.tabs.sendMessage
-      // chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      //   chrome.tabs.sendMessage(tabs[0].id, {type: 'REC_START'});
-      // });
-      
-      updateUIState('recording');
-      updateStatus('(stub) Recording started');
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      updateStatus('Error starting recording');
-    }
-  }
-
-  function handleStopRecording() {
-    try {
-      console.log('REC_STOP - (Phase 0 stub) Stop recording requested');
-      
-      // TODO Phase 1: Send message to active tab via chrome.tabs.sendMessage
-      // chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      //   chrome.tabs.sendMessage(tabs[0].id, {type: 'REC_STOP'});
-      // });
-      
-      updateUIState('stopped');
-      updateStatus('(stub) Recording stopped');
-    } catch (error) {
-      console.error('Error stopping recording:', error);
-      updateStatus('Error stopping recording');
-    }
-  }
-
-  function handleDownloadTrace() {
-    try {
-      console.log('REC_DUMP - (Phase 0 stub) Download trace requested');
-      
-      // TODO Phase 1: Send message to active tab to get trace data, then to background script
-      // chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      //   chrome.tabs.sendMessage(tabs[0].id, {type: 'REC_DUMP'}, (response) => {
-      //     chrome.runtime.sendMessage({type: 'DOWNLOAD_TRACE', trace: response.trace});
-      //   });
-      // });
-      
-      updateStatus('(stub) Download requested');
-    } catch (error) {
-      console.error('Error downloading trace:', error);
-      updateStatus('Error downloading trace');
-    }
-  }
-
-  function updateUIState(state) {
-    try {
-      switch (state) {
-        case 'ready':
-          startBtn.disabled = false;
-          stopBtn.disabled = true;
-          downloadBtn.disabled = true;
-          break;
-        case 'recording':
-          startBtn.disabled = true;
-          stopBtn.disabled = false;
-          downloadBtn.disabled = true;
-          break;
-        case 'stopped':
-          startBtn.disabled = false;
-          stopBtn.disabled = true;
-          downloadBtn.disabled = false;
-          break;
-        default:
-          console.warn('Unknown UI state:', state);
-      }
-    } catch (error) {
-      console.error('Error updating UI state:', error);
-    }
-  }
-
-  function updateStatus(message) {
-    try {
-      if (statusDiv) {
-        statusDiv.textContent = message;
-      }
-    } catch (error) {
-      console.error('Error updating status:', error);
-    }
-  }
-
-})();
+  initialize();
+});

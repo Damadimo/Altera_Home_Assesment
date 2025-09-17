@@ -1,94 +1,242 @@
-// PHASE 0 STUB - Robust Selector Builder Utility
-// This module will generate reliable, maintainable CSS selectors for recorded elements
+window.SelectorUtils = window.SelectorUtils || {};
 
-/**
- * PHASE 0 STUB - Builds a robust CSS selector for the given element
- * 
- * Future implementation strategy (Phase 1+):
- * 1. Prefer stable attributes: id, data-*, aria-*, name
- * 2. Fall back to semantic structure: tag.class combinations
- * 3. Use positional selectors (nth-of-type) as last resort
- * 4. Validate uniqueness and test selector reliability
- * 5. Handle edge cases: shadow DOM, iframes, dynamic content
- * 
- * Known pitfalls to address:
- * - Dynamic IDs (auto-generated, session-based)
- * - Fragile nth-child selectors that break with DOM changes
- * - CSS class names that change (CSS-in-JS, build tools)
- * - Elements inside shadow DOM or cross-origin iframes
- * - Elements that are removed/recreated during interactions
- * 
- * @param {Element} el - The DOM element to create a selector for
- * @returns {string} CSS selector string that should uniquely identify the element
- */
-export function buildRobustSelector(el) {
-  // PHASE 0 STUB - Return basic tag name only
-  // TODO Phase 1: Implement full robust selector algorithm
+const SELECTOR_CONFIG = {
+  MAX_ID_LENGTH: 24,
+  MAX_DIGIT_RATIO: 0.35,
+  MIN_CLASS_LENGTH: 3,
+  MAX_CLASS_LENGTH: 24,
+  MAX_DEPTH: 4,
   
-  if (!el || !el.tagName) {
-    console.warn('buildRobustSelector called with invalid element:', el);
+  PREFERRED_DATA_ATTRS: [
+    'data-testid', 'data-test', 'data-cy', 'data-qa', 
+    'data-qaid', 'data-automation-id', 'data-test-id'
+  ],
+  
+  ARIA_ATTRS: [
+    'aria-label', 'aria-controls', 'aria-haspopup', 
+    'aria-expanded', 'aria-selected', 'aria-current'
+  ],
+  
+  UTILITY_CLASS_PATTERNS: [
+    /^([a-f0-9]{6,}|[A-Z0-9]{6,})$/,
+    /(^|-)((p|m|gap|text|bg|w|h|min|max|flex|grid|col|row)\-)/
+  ],
+  
+  UNSTABLE_ID_PATTERNS: [
+    /^radix-/,
+    /^[a-f0-9-]{8,}$/,
+    /[A-Z].*[a-z].*\d.*/
+  ]
+};
+
+const selectorCache = new WeakMap();
+
+window.SelectorUtils.isUnique = function(selector) {
+  try {
+    return document.querySelectorAll(selector).length === 1;
+  } catch (error) {
+    console.warn('Invalid selector:', selector, error);
+    return false;
+  }
+};
+
+window.SelectorUtils.selectUnique = function(element, candidates) {
+  for (const candidate of candidates) {
+    if (this.isUnique(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+};
+
+window.SelectorUtils.isStableId = function(id) {
+  if (!id || id.length > SELECTOR_CONFIG.MAX_ID_LENGTH) {
+    return false;
+  }
+
+  for (const pattern of SELECTOR_CONFIG.UNSTABLE_ID_PATTERNS) {
+    if (pattern.test(id)) return false;
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(id)) return false;
+
+  const digitCount = (id.match(/\d/g) || []).length;
+  const digitRatio = digitCount / id.length;
+  
+  return digitRatio <= SELECTOR_CONFIG.MAX_DIGIT_RATIO;
+};
+
+window.SelectorUtils.getStableClasses = function(element) {
+  if (!element.classList || element.classList.length === 0) {
+    return [];
+  }
+
+  return Array.from(element.classList)
+    .filter(className => {
+      if (!/^[a-z][\w-]*$/i.test(className)) return false;
+      if (className.length < SELECTOR_CONFIG.MIN_CLASS_LENGTH || 
+          className.length > SELECTOR_CONFIG.MAX_CLASS_LENGTH) return false;
+
+      return !SELECTOR_CONFIG.UTILITY_CLASS_PATTERNS.some(pattern => 
+        pattern.test(className)
+      );
+    })
+    .slice(0, 2);
+};
+
+window.SelectorUtils.buildSemanticSelector = function(element) {
+  const role = element.getAttribute('role');
+  const ariaLabel = element.getAttribute('aria-label');
+  
+  if (!role || !ariaLabel) return null;
+  
+  if (!/^(menuitem|button|option)$/i.test(role)) return null;
+  
+  const tagName = element.tagName.toLowerCase();
+  const selector = `${tagName}[role="${CSS.escape(role)}"][aria-label="${CSS.escape(ariaLabel)}"]`;
+  
+  return this.isUnique(selector) ? selector : null;
+};
+
+window.SelectorUtils.buildDataSelector = function(element) {
+  const candidates = [];
+  
+  for (const attr of SELECTOR_CONFIG.PREFERRED_DATA_ATTRS) {
+    const value = element.getAttribute(attr);
+    if (value) {
+      candidates.push(`[${attr}="${CSS.escape(value)}"]`);
+    }
+  }
+  
+  for (const attr of element.attributes) {
+    if (attr.name.startsWith('data-') && 
+        !SELECTOR_CONFIG.PREFERRED_DATA_ATTRS.includes(attr.name) && 
+        attr.value) {
+      candidates.push(`[${attr.name}="${CSS.escape(attr.value)}"]`);
+    }
+  }
+  
+  return this.selectUnique(element, candidates);
+};
+
+window.SelectorUtils.buildAriaSelector = function(element) {
+  const candidates = [];
+  const role = element.getAttribute('role');
+  
+  for (const attr of SELECTOR_CONFIG.ARIA_ATTRS) {
+    const value = element.getAttribute(attr);
+    if (value) {
+      candidates.push(`[${attr}="${CSS.escape(value)}"]`);
+      
+      if (role) {
+        candidates.push(`[role="${CSS.escape(role)}"][${attr}="${CSS.escape(value)}"]`);
+      }
+    }
+  }
+  
+  return this.selectUnique(element, candidates);
+};
+
+window.SelectorUtils.buildIdSelector = function(element) {
+  if (!element.id || !this.isStableId(element.id)) {
+    return null;
+  }
+  
+  const selector = `#${CSS.escape(element.id)}`;
+  return this.isUnique(selector) ? selector : null;
+};
+
+window.SelectorUtils.buildStructuralPath = function(element) {
+  const path = [];
+  let current = element;
+  let depth = 0;
+  
+  while (current && current.tagName && depth < SELECTOR_CONFIG.MAX_DEPTH) {
+    const tagName = current.tagName.toLowerCase();
+    let segment = tagName;
+    
+    const stableClasses = this.getStableClasses(current);
+    if (stableClasses.length > 0) {
+      segment += '.' + stableClasses.join('.');
+    }
+    
+    if (current.parentNode) {
+      const siblings = Array.from(current.parentNode.children)
+        .filter(child => child.tagName === current.tagName);
+        
+      if (siblings.length > 1) {
+        const index = siblings.indexOf(current) + 1;
+        segment += `:nth-of-type(${index})`;
+      }
+    }
+    
+    path.unshift(segment);
+    
+    const currentSelector = path.join(' > ');
+    if (this.isUnique(currentSelector)) {
+      return currentSelector;
+    }
+    
+    current = current.parentElement;
+    depth++;
+  }
+  
+  return path.join(' > ') || element.tagName?.toLowerCase() || 'unknown';
+};
+
+window.SelectorUtils.buildRobustSelector = function(element) {
+  if (!element || !element.tagName) {
     return '';
   }
 
-  // Phase 0: Return just the tag name (not unique, but valid)
-  const basicSelector = el.tagName.toLowerCase();
-  
-  console.log('(Phase 0 stub) buildRobustSelector returning basic selector:', basicSelector);
-  
-  return basicSelector;
-}
+  if (selectorCache.has(element)) {
+    return selectorCache.get(element);
+  }
 
-/**
- * TODO Phase 1: Implement selector validation
- * Tests if a selector uniquely identifies the target element
- * 
- * @param {string} selector - CSS selector to test
- * @param {Element} targetElement - Element that should be matched
- * @returns {boolean} True if selector is unique and correct
- */
-export function validateSelector(selector, targetElement) {
-  // TODO Phase 1: Implement validation logic
-  // - document.querySelectorAll(selector) should return exactly one element
-  // - That element should be === targetElement
-  // - Handle exceptions for invalid selectors
-  
-  console.log('(Phase 0 stub) validateSelector called with:', selector);
-  return false; // Always false in Phase 0
-}
+  let selector;
 
-/**
- * TODO Phase 1: Implement selector fallback chain
- * Tries multiple selector strategies in order of preference
- * 
- * @param {Element} el - Target element
- * @returns {string} Best available selector
- */
-export function buildSelectorWithFallbacks(el) {
-  // TODO Phase 1: Implement fallback strategy
-  // 1. Try ID-based selector (if ID looks stable)
-  // 2. Try data-* attributes (data-testid, data-cy, etc.)
-  // 3. Try aria-* attributes (aria-label, aria-labelledby)
-  // 4. Try name attribute (for form elements)
-  // 5. Try semantic class combinations
-  // 6. Fall back to structural path with nth-of-type
-  
-  return buildRobustSelector(el);
-}
+  selector = this.buildSemanticSelector(element);
+  if (selector) {
+    selectorCache.set(element, selector);
+    return selector;
+  }
 
-/**
- * TODO Phase 1: Implement stable ID detection
- * Determines if an element's ID appears to be stable/semantic vs auto-generated
- * 
- * @param {string} id - Element ID to analyze
- * @returns {boolean} True if ID appears stable
- */
-export function isStableId(id) {
-  // TODO Phase 1: Implement heuristics for stable IDs
-  // - Avoid UUIDs, random numbers, session IDs
-  // - Prefer semantic names like 'submit-button', 'user-menu'
-  // - Check for common auto-generation patterns
-  
-  return false; // Conservative default in Phase 0
-}
+  selector = this.buildDataSelector(element);
+  if (selector) {
+    selectorCache.set(element, selector);
+    return selector;
+  }
 
-console.log('Selector utility module loaded (Phase 0 stub)');
+  selector = this.buildAriaSelector(element);
+  if (selector) {
+    selectorCache.set(element, selector);
+    return selector;
+  }
+
+  selector = this.buildIdSelector(element);
+  if (selector) {
+    selectorCache.set(element, selector);
+    return selector;
+  }
+
+  selector = this.buildStructuralPath(element);
+  selectorCache.set(element, selector);
+  return selector;
+};
+
+// Dev performance monitoring
+if (typeof window !== 'undefined' && window.location?.hostname === 'localhost') {
+  const originalBuildRobustSelector = window.SelectorUtils.buildRobustSelector;
+  
+  window.SelectorUtils.buildRobustSelector = function(element) {
+    const start = performance.now();
+    const result = originalBuildRobustSelector.call(this, element);
+    const duration = performance.now() - start;
+    
+    if (duration > 10) {
+      console.warn(`Slow selector generation: ${duration.toFixed(2)}ms for`, element);
+    }
+    
+    return result;
+  };
+}

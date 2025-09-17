@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mini DevTools Recorder Trace",
+  "description": "Schema for recorded user interaction traces",
+  "type": "object",
+  "required": ["version", "meta", "steps"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Trace format version"
+    },
+    "recording": {
+      "type": "boolean",
+      "description": "Recording state when trace was saved"
+    },
+    "t0": {
+      "type": "number",
+      "description": "Performance.now() baseline timestamp"
+    },
+    "meta": {
+      "type": "object",
+      "required": ["userAgent", "viewport"],
+      "properties": {
+        "userAgent": {
+          "type": "string",
+          "description": "Browser user agent string"
+        },
+        "viewport": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "ts"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["navigate", "click", "type", "key", "scroll", "waitVisible"]
+          },
+          "ts": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Timestamp in seconds from t0"
+          },
+          "selector": {
+            "type": "string",
+            "description": "CSS selector for target element"
+          },
+          "fallbacks": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Fallback selectors for element targeting"
+          },
+          "role": {
+            "type": "string",
+            "description": "ARIA role of target element"
+          },
+          "name": {
+            "type": "string",
+            "description": "Accessible name of target element"
+          },
+          "offset": {
+            "type": "object",
+            "required": ["x", "y"],
+            "properties": {
+              "x": { "type": "integer" },
+              "y": { "type": "integer" }
+            },
+            "description": "Click coordinates relative to element"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Navigation URL (navigate steps only)"
+          },
+          "text": {
+            "type": "string",
+            "description": "Text to type (type steps only)"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key to press (key steps only)"
+          },
+          "target": {
+            "type": "string",
+            "enum": ["window"],
+            "description": "Scroll target (scroll steps only)"
+          },
+          "x": {
+            "type": "integer",
+            "description": "Scroll X position (scroll steps only)"
+          },
+          "y": {
+            "type": "integer", 
+            "description": "Scroll Y position (scroll steps only)"
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 100,
+            "description": "Wait timeout in milliseconds (waitVisible steps only)"
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "type": { "const": "navigate" } } },
+            "then": { "required": ["url"] }
+          },
+          {
+            "if": { "properties": { "type": { "const": "click" } } },
+            "then": { "required": ["selector"] }
+          },
+          {
+            "if": { "properties": { "type": { "const": "type" } } },
+            "then": { "required": ["selector", "text"] }
+          },
+          {
+            "if": { "properties": { "type": { "const": "key" } } },
+            "then": { "required": ["selector", "key"] }
+          },
+          {
+            "if": { "properties": { "type": { "const": "scroll" } } },
+            "then": { "required": ["target", "x", "y"] }
+          },
+          {
+            "if": { "properties": { "type": { "const": "waitVisible" } } },
+            "then": { "required": ["selector"] }
+          }
+        ]
+      }
+    }
+  }
+}

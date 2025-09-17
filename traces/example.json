@@ -1,24 +1,37 @@
 {
+  "version": 1,
+  "recording": false,
+  "t0": 0,
   "meta": {
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     "viewport": {
-      "width": 1920,
-      "height": 1080
-    },
-    "startTime": 1640995200000,
-    "duration": 5000
+      "width": 1280,
+      "height": 720
+    }
   },
   "steps": [
     {
       "type": "navigate",
-      "timestamp": 0,
-      "url": "https://example.com"
+      "url": "https://httpbin.org/forms/post",
+      "ts": 0
+    },
+    {
+      "type": "type",
+      "selector": "input[name='custname']",
+      "text": "John Doe",
+      "ts": 1.5
+    },
+    {
+      "type": "type",
+      "selector": "input[name='custtel']",
+      "text": "555-1234",
+      "ts": 2.1
     },
     {
       "type": "click",
-      "timestamp": 1500,
-      "selector": "#submit-button",
-      "coordinates": {"x": 120, "y": 45}
+      "selector": "input[type='submit']",
+      "offset": {"x": 50, "y": 15},
+      "ts": 3.0
     }
   ]
 }
