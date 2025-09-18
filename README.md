@@ -43,6 +43,7 @@ On any failure, the script writes artifacts/step-XX-fail.png and appends to arti
 ## Design Decisions
 
 **Why Not OCR/Vision**
+
 - DOM-based selectors are deterministic, fast, and require no model runtime or GPU.
 - OCR/vision would help on canvas-only UIs with no semantics, but adds latency, dependencies, and uncertainty.
 - If I had more time, I’d add a pluggable locator that can fall back to vision for elements without a usable selector.
@@ -55,38 +56,45 @@ On any failure, the script writes artifacts/step-XX-fail.png and appends to arti
 - Only if none of the above exist do it falls back to a short CSS path. (Trying to avoid brittle stuff like long class chains).
 
 **Clicking**
+
 On replay we send the same sequence a user would: pointerdown → mousedown → mouseup → click, at the exact spot that was recorded. Many sites listen for these specifically.
 
 **Typing**
+
 Typing works in both kinds of editors
 - Standard fields (<input>, <textarea>): we set .value and fire an input event so frameworks update.
 - Rich editors (contenteditable): “insert text” character by character, which triggers the editor’s own handlers.
 
 **Timing and waiting**
+
 - Before acting, the extension wait for the page to finish loading and for the target element to exist.
 - “Respect timing” (toggle) replays your original delays so interactions don’t run ahead of the UI.
 
 ## Limitations & Future Work
 
 **Current Scope:**
+
 - Single-tab interactions only
 - No cross-site authentication flows
 - DOM-based targeting (no canvas/video elements)
 - Only records and replays clicks, typing and scrolls 
 
 **Room for future Enhancements:**
+
 - File upload interaction recording  
 - Clipboard operation capture
 - Optional vision fallback for non-DOM targets
 - StorageState integration for auth persistence
 
 ## What I finished before the Two Hour Mark
+
 - Set up the Chrome extension with a simple popup and background script.
 - Built the recorder: it logs page visits, clicks, typing, pressing Enter, and basic scrolling.
 - Added a Download Trace button that saves the actions as a JSON file.
 - Wrote a command-line replayer (Playwright) that can open the site and play those actions back.
 
 ## What I did after the Two Hour Mark
+
 - Replay in New Tab button from the extension UI, plus a toggle to respect the original timing.
 - Made menu clicks reliable even if the app changes layout (it chooses items by visible name like “Web search,” not fragile CSS positions).
 - More realistic clicks (the replay clicks at the same spot you did) and a quick highlight on the target so you can see what’s happening.
