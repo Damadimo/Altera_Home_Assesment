@@ -1,6 +1,6 @@
 # Mini DevTools Recorder
 
-A small Chrome extension that records browser actions and replays them—either directly in a tab or via a Playwright script.
+A small Chrome extension that records browser actions and replays them either directly in a tab or via a Playwright script.
 
 I built it to satisfy (and go a bit beyond) the assignment:
 
