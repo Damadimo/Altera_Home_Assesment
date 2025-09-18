@@ -5,7 +5,7 @@ The extension currently supports clicking, typing and scrolling actions.
 
 [![Watch the Demo](https://img.youtube.com/vi/TQIKGTnLeX4>/hqdefault.jpg)](https://www.youtube.com/embed/TQIKGTnLeX4)
 
-[<img src="https://img.youtube.com/vi/TQIKGTnLeX4/hqdefault.jpg" width="600" height="300"
+[<img src="https://img.youtube.com/vi/TQIKGTnLeX4/hqdefault.jpg" width="800" height="450"
 />](https://www.youtube.com/embed/TQIKGTnLeX4)
 
 ## Quick Start
