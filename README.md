@@ -1,4 +1,4 @@
-# Mini DevTools Recorder
+# Chrome Action Tracker Extension
 
 A small Chrome extension that records browser actions and replays them either directly in a tab or via a Playwright script.
 The extension currently supports clicking, typing and scrolling actions.
