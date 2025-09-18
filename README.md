@@ -89,7 +89,7 @@ Typing works in both kinds of editors
 ## What I finished before the Two Hour Mark
 
 - Set up the Chrome extension with a simple popup and background script.
-- Built the recorder: it logs page visits, clicks, typing, pressing Enter, and basic scrolling.
+- Built the recorder: it logs page visits, clicks, types, presses Enter, and basic scrolling.
 - Added a Download Trace button that saves the actions as a JSON file.
 - Wrote a command-line replayer (Playwright) that can open the site and play those actions back.
 
