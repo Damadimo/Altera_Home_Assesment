@@ -62,7 +62,7 @@ On replay we send the same sequence a user would: pointerdown → mousedown → 
 **Typing**
 
 Typing works in both kinds of editors
-- Standard fields (<input>, <textarea>): we set .value and fire an input event so frameworks update.
+- Standard fields (input, textarea): we set .value and fire an input event so frameworks update.
 - Rich editors (contenteditable): “insert text” character by character, which triggers the editor’s own handlers.
 
 **Timing and waiting**
