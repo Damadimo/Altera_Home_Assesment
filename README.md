@@ -3,7 +3,7 @@
 A small Chrome extension that records browser actions and replays them either directly in a tab or via a Playwright script.
 The extension currently supports clicking, typing and scrolling actions.
 
-[![## Watch the Demo]](https://www.youtube.com/embed/TQIKGTnLeX4)
+[Watch The Demo!](https://www.youtube.com/embed/TQIKGTnLeX4)
 
 [<img src="https://img.youtube.com/vi/TQIKGTnLeX4/hqdefault.jpg" width="800" height="450"
 />](https://www.youtube.com/embed/TQIKGTnLeX4)
