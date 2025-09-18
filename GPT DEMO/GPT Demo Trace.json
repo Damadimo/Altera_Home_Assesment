@@ -1,0 +1,92 @@
+{
+  "recording": false,
+  "t0": 35511.29999999702,
+  "meta": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    "viewport": {
+      "width": 1920,
+      "height": 991
+    }
+  },
+  "steps": [
+    {
+      "type": "navigate",
+      "url": "https://chatgpt.com/",
+      "ts": 0
+    },
+    {
+      "type": "click",
+      "selector": "#prompt-textarea",
+      "offset": {
+        "x": 349,
+        "y": 13
+      },
+      "ts": 1.248
+    },
+    {
+      "type": "click",
+      "selector": "#prompt-textarea",
+      "offset": {
+        "x": 256,
+        "y": 24
+      },
+      "ts": 8.781
+    },
+    {
+      "type": "type",
+      "selector": "#prompt-textarea",
+      "text": "How are you doing?",
+      "ts": 15.111
+    },
+    {
+      "type": "key",
+      "selector": "#prompt-textarea",
+      "key": "Enter",
+      "ts": 15.799
+    },
+    {
+      "type": "click",
+      "selector": "[data-testid=\"composer-button-search\"]",
+      "offset": {
+        "x": 57,
+        "y": 1
+      },
+      "ts": 26.305,
+      "fallbacks": [
+        "[data-testid=\"composer-button-search\"]",
+        "button[aria-label=\"Search\"]"
+      ]
+    },
+    {
+      "type": "type",
+      "selector": "#prompt-textarea",
+      "text": "T",
+      "ts": 29.858
+    },
+    {
+      "type": "type",
+      "selector": "#prompt-textarea",
+      "text": "ell me about some news",
+      "ts": 32.253
+    },
+    {
+      "type": "key",
+      "selector": "#prompt-textarea",
+      "key": "Enter",
+      "ts": 32.924
+    },
+    {
+      "type": "type",
+      "selector": "#prompt-textarea",
+      "text": "Tell me a bit more about the protests in nepal",
+      "ts": 69.53
+    },
+    {
+      "type": "key",
+      "selector": "#prompt-textarea",
+      "key": "Enter",
+      "ts": 69.825
+    }
+  ],
+  "version": 1
+}
