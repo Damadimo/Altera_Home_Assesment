@@ -40,30 +40,6 @@ node replay.js ../traces/your-trace.json --headful --respect-timing
 
 On any failure, the script writes artifacts/step-XX-fail.png and appends to artifacts/errors.json.
 
-## Features
-
-**Robust Element Targeting**
-- Multi-layered selector strategy: `data-testid` → ARIA attributes → role+name → structural fallbacks
-- Menu scoping prevents false matches on hidden duplicates
-- ContentEditable typing support with proper event synthesis
-- Pointer/click deduplication and debounced scroll capture
-
-**Privacy & Security**
-- Automatic sensitive field detection (passwords, credit cards, `[data-private]`)
-- Local-only storage, no external transmission
-- Minimal permissions (activeTab, scripting, downloads, storage, tabs)
-
-**Smart Assertions**
-- Automatic `waitVisible` steps after menu selections
-- Validates UI state changes for deterministic replay
-- Timeout-based element waiting with graceful degradation
-
-**Developer Experience**
-- Visual element highlighting during replay
-- `--respect-timing` for realistic playback speed
-- Failure screenshots and error artifacts
-- Video recording support (`--video` flag)
-
 ## Design Decisions
 
 **Why Not OCR/Vision**
